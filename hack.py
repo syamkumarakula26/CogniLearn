@@ -447,46 +447,63 @@ with tab1:
 
 # ----------------- TAB 2 (Fragmented) -----------------
 with tab2:
-    st.subheader("🎯 Assessment Quiz & Practice Questions")
-    st.caption("Quizzes generated with separated options and dedicated step-by-step solutions per source.")
-
     @st.fragment
-    def fragment_quiz():
-        if st.button("Generate Assessment Quiz", key="btn_quiz"):
-            if not get_active_study_text():
-                st.warning("Please upload a document or paste notes above first.")
-            else:
-                task = (
-                    "Generate an organized practice assessment quiz grouped strictly by source.\n\n"
-                    "STRICT FORMATTING REQUIREMENTS:\n"
-                    "1. For each source marked by '=== SOURCE START: [Name] ===', create a header:\n"
-                    "   '### 🎯 Quiz: [Source Name]'\n\n"
-                    "2. Each question MUST follow this EXACT multi-line format with bold question text and blank lines between options:\n\n"
-                    "   **Question [N]: [Bold Question Text Here]?**\n\n"
-                    "   - A) [Option A text]\n"
-                    "   - B) [Option B text]\n"
-                    "   - C) [Option C text]\n"
-                    "   - D) [Option D text]\n\n"
-                    "   (Do NOT lump options together on one line. Every option must be its own bullet on a new line.)\n\n"
-                    "3. At the end of each source quiz, provide an '### 🔑 Answer Key & Solutions: [Source Name]' section:\n\n"
-                    "   **Question [N] Solution:**\n"
-                    "   - **Correct Answer:** [Option Letter]\n"
-                    "   - **Explanation:** [Concise reasoning/calculation breakdown on its own line]\n\n"
-                    "4. Keep questions and answer keys completely separated per source."
-                )
-                st.session_state.quiz_res = st.write_stream(stream_study_engine(task, get_active_study_text()))
-        elif st.session_state.quiz_res:
-            st.markdown(st.session_state.quiz_res)
+    def render_quiz_tab():
+        st.subheader("🎯 Assessment Quiz")
+        st.caption("Test your conceptual retention with diagnostic multiple-choice questions.")
 
-        if st.session_state.quiz_res:
-            st.download_button(
-                label="📥 Download Practice Quiz (.md)",
-                data=st.session_state.quiz_res,
-                file_name="practice_quiz.md",
-                mime="text/markdown"
+        col_btn, _ = st.columns([2, 5])
+        with col_btn:
+            generate_quiz = st.button("Generate Practice Quiz", use_container_width=True, type="primary")
+
+        if generate_quiz:
+            study_text = get_aggregated_text()
+            if not study_text.strip():
+                st.warning("Please upload a PDF or enter notes in the sidebar first.")
+                return
+
+            quiz_prompt = (
+                "You are an expert university examiner. Based strictly on the provided study notes, "
+                "generate a rigorous multiple-choice diagnostic practice quiz.\n\n"
+                "Formatting requirements:\n"
+                "1. Provide each question numbered with clear options: (A), (B), (C), (D).\n"
+                "2. DO NOT reveal the answers immediately after each question.\n"
+                "3. After all questions, insert exactly this divider line on its own line: '---ANSWER_KEY---'\n"
+                "4. After the divider line, output the detailed Answer Key, citing the correct letter option "
+                "and a step-by-step conceptual rationale for each question.\n\n"
+                f"Source Content:\n{study_text}"
             )
 
-    fragment_quiz()
+            with st.spinner("Compiling diagnostic quiz questions..."):
+                try:
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash-lite",
+                        contents=quiz_prompt,
+                    )
+                    st.session_state.quiz_content = response.text
+                except Exception as e:
+                    st.error(f"Generation error: {e}")
+
+        # Render quiz if content is available
+        if "quiz_content" in st.session_state and st.session_state.quiz_content:
+            raw_quiz = st.session_state.quiz_content
+
+            if "---ANSWER_KEY---" in raw_quiz:
+                questions_part, answers_part = raw_quiz.split("---ANSWER_KEY---", 1)
+                
+                # Display questions first
+                st.markdown(questions_part.strip())
+                st.write("")
+                
+                # Hidden collapsible container for answers
+                with st.expander("👁️ Reveal Answer Key & Detailed Explanations", expanded=False):
+                    st.success("### Official Answer Key & Rationale")
+                    st.markdown(answers_part.strip())
+            else:
+                # Direct fallback if the model omitted the delimiter
+                st.markdown(raw_quiz)
+
+    render_quiz_tab()
 
 # ----------------- TAB 3 (Fragmented) -----------------
 with tab3:
