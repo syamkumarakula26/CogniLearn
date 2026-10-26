@@ -31,6 +31,13 @@ st.markdown("""
         font-weight: 600 !important;
         color: #475569 !important;
     }
+    /* 1.2 Your existing slider */
+    quiz_difficulty = st.select_slider(
+        "Quiz Difficulty",
+        options=["Beginner", "Intermediate", "Advanced"],
+        value="Intermediate",
+        key="quiz_difficulty"
+    )
 
     /* 2. File Uploader & Text Box Styling */
     .stFileUploader section {
