@@ -464,11 +464,19 @@ with tab2:
 
             task_prompt = (
                 "Generate a diagnostic multiple-choice practice quiz based strictly on the source material.\n\n"
-                "Requirements:\n"
-                "1. Provide each question numbered with clear options: (A), (B), (C), (D).\n"
-                "2. DO NOT reveal the answers immediately under the questions.\n"
-                "3. After all questions and options are listed, print exactly this delimiter line on its own line: '---ANSWER_KEY---'\n"
-                "4. After the delimiter line, output the complete Answer Key citing the correct letter option and a concise rationale for each question."
+                "Strict Formatting Requirements:\n"
+                "1. Format each question title in BOLD with its number, like this:\n"
+                "   **Question 1: [Question text here]?**\n"
+                "2. Put every option on its OWN separate line with spacing:\n"
+                "   (A) Option A text\n\n"
+                "   (B) Option B text\n\n"
+                "   (C) Option C text\n\n"
+                "   (D) Option D text\n\n"
+                "3. Separate consecutive questions with a clear divider line (---).\n"
+                "4. DO NOT provide the answers under each question.\n"
+                "5. After all questions and options are completely finished, output exactly this delimiter on its own line: '---ANSWER_KEY---'\n"
+                "6. After the delimiter, list each question's answer in bold followed by its rationale, like this:\n"
+                "   **Question 1: (A)** - [Step-by-step rationale]"
             )
 
             with st.spinner("Compiling diagnostic quiz questions..."):
@@ -478,14 +486,14 @@ with tab2:
                 except Exception as e:
                     st.error(f"Generation error: {e}")
 
-        # Display the quiz if content is in state
+        # Display the formatted quiz
         if "quiz_content" in st.session_state and st.session_state.quiz_content:
             raw_quiz = st.session_state.quiz_content
 
             if "---ANSWER_KEY---" in raw_quiz:
                 questions_part, answers_part = raw_quiz.split("---ANSWER_KEY---", 1)
                 
-                # Render questions
+                # Render questions cleanly
                 st.markdown(questions_part.strip())
                 st.write("")
                 
