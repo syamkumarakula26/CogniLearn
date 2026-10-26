@@ -457,56 +457,35 @@ with tab2:
             generate_quiz = st.button("Generate Practice Quiz", use_container_width=True, type="primary")
 
         if generate_quiz:
-            # Check common session keys or fallback safely
-            study_text = (
-                st.session_state.get("combined_text")
-                or st.session_state.get("aggregated_text")
-                or st.session_state.get("notes_text", "")
-            )
-
-            # If none of those keys were used, fallback to any text stored in session state
-            if not study_text.strip():
-                # Gather whatever text is available in session state
-                all_pieces = [
-                    str(v) for k, v in st.session_state.items() 
-                    if isinstance(v, str) and len(v) > 50 and k not in ["quiz_content", "flashcards_raw", "summary_content"]
-                ]
-                study_text = "\n\n".join(all_pieces)
-
+            study_text = get_active_study_text()
             if not study_text.strip():
                 st.warning("Please upload a PDF or enter notes first.")
                 return
 
-            quiz_prompt = (
-                "You are an expert university examiner. Based strictly on the provided study notes, "
-                "generate a rigorous multiple-choice diagnostic practice quiz.\n\n"
-                "Formatting requirements:\n"
+            task_prompt = (
+                "Generate a diagnostic multiple-choice practice quiz based strictly on the source material.\n\n"
+                "Requirements:\n"
                 "1. Provide each question numbered with clear options: (A), (B), (C), (D).\n"
-                "2. DO NOT reveal the answers immediately after each question.\n"
-                "3. After all questions, insert exactly this divider line on its own line: '---ANSWER_KEY---'\n"
-                "4. After the divider line, output the detailed Answer Key, citing the correct letter option "
-                "and a step-by-step conceptual rationale for each question.\n\n"
-                f"Source Content:\n{study_text}"
+                "2. DO NOT reveal the answers immediately under the questions.\n"
+                "3. After all questions and options are listed, print exactly this delimiter line on its own line: '---ANSWER_KEY---'\n"
+                "4. After the delimiter line, output the complete Answer Key citing the correct letter option and a concise rationale for each question."
             )
 
             with st.spinner("Compiling diagnostic quiz questions..."):
                 try:
-                    response = client.models.generate_content(
-                        model="gemini-3.5-flash-lite",
-                        contents=quiz_prompt,
-                    )
-                    st.session_state.quiz_content = response.text
+                    full_response = "".join(stream_study_engine(task_prompt, study_text))
+                    st.session_state.quiz_content = full_response
                 except Exception as e:
                     st.error(f"Generation error: {e}")
 
-        # Render quiz if content is available
+        # Display the quiz if content is in state
         if "quiz_content" in st.session_state and st.session_state.quiz_content:
             raw_quiz = st.session_state.quiz_content
 
             if "---ANSWER_KEY---" in raw_quiz:
                 questions_part, answers_part = raw_quiz.split("---ANSWER_KEY---", 1)
                 
-                # Display questions
+                # Render questions
                 st.markdown(questions_part.strip())
                 st.write("")
                 
