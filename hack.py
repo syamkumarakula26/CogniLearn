@@ -449,6 +449,7 @@ with tab1:
 with tab2:
     @st.fragment
     def render_quiz_tab():
+        import re
         st.subheader("🎯 Assessment Quiz")
         st.caption("Test your conceptual retention with diagnostic multiple-choice questions.")
 
@@ -464,19 +465,21 @@ with tab2:
 
             task_prompt = (
                 "Generate a diagnostic multiple-choice practice quiz based strictly on the source material.\n\n"
-                "Strict Formatting Requirements:\n"
-                "1. Format each question title in BOLD with its number, like this:\n"
-                "   **Question 1: [Question text here]?**\n"
-                "2. Put every option on its OWN separate line with spacing:\n"
+                "Strict Formatting Rules:\n"
+                "1. Format each question heading using '###' Markdown level 3 header so it is prominent:\n"
+                "   ### Question 1: [Question Text Here]?\n\n"
+                "2. Present the options as normal text, each on its own separate line:\n"
                 "   (A) Option A text\n\n"
                 "   (B) Option B text\n\n"
                 "   (C) Option C text\n\n"
                 "   (D) Option D text\n\n"
-                "3. Separate consecutive questions with a clear divider line (---).\n"
-                "4. DO NOT provide the answers under each question.\n"
-                "5. After all questions and options are completely finished, output exactly this delimiter on its own line: '---ANSWER_KEY---'\n"
-                "6. After the delimiter, list each question's answer in bold followed by its rationale, like this:\n"
-                "   **Question 1: (A)** - [Step-by-step rationale]"
+                "3. Place a horizontal line '---' between questions.\n"
+                "4. DO NOT print answers right under each question.\n"
+                "5. When all questions and choices are done, put this exact marker on a brand new isolated line:\n"
+                "   [[[ANSWER_KEY_SECTION]]]\n\n"
+                "6. After that marker, write the solutions formatted as:\n"
+                "   **Question 1: (A)** - [Step-by-step rationale]\n\n"
+                "   **Question 2: (B)** - [Step-by-step rationale]"
             )
 
             with st.spinner("Compiling diagnostic quiz questions..."):
@@ -486,22 +489,28 @@ with tab2:
                 except Exception as e:
                     st.error(f"Generation error: {e}")
 
-        # Display the formatted quiz
+        # Render quiz
         if "quiz_content" in st.session_state and st.session_state.quiz_content:
             raw_quiz = st.session_state.quiz_content
 
-            if "---ANSWER_KEY---" in raw_quiz:
-                questions_part, answers_part = raw_quiz.split("---ANSWER_KEY---", 1)
-                
-                # Render questions cleanly
-                st.markdown(questions_part.strip())
+            # Robust split pattern covering new delimiter or old delimiter variations
+            split_pattern = r"(\[\[\[ANSWER_KEY_SECTION\]\]\]|---+\s*ANSWER_KEY\s*---+|ANSWER_KEY:?)"
+            parts = re.split(split_pattern, raw_quiz, maxsplit=1, flags=re.IGNORECASE)
+
+            if len(parts) >= 3:
+                questions_part = parts[0].strip()
+                answers_part = parts[2].strip()
+
+                # Render enlarged questions
+                st.markdown(questions_part)
                 st.write("")
-                
-                # Collapsible answer reveal container
-                with st.expander("👁️ Reveal Answer Key & Detailed Explanations", expanded=False):
+
+                # Hidden collapsible container for answers
+                with st.expander("👁️ Reveal Answer Key & Explanations", expanded=False):
                     st.success("### Official Answer Key & Rationale")
-                    st.markdown(answers_part.strip())
+                    st.markdown(answers_part)
             else:
+                # If delimiter wasn't triggered cleanly, display text
                 st.markdown(raw_quiz)
 
     render_quiz_tab()
