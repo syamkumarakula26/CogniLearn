@@ -1,9 +1,11 @@
-# Ignore Streamlit secrets and credentials
+# Streamlit secrets (CRITICAL: Do not remove)
 .streamlit/secrets.toml
 
-# Ignore Python cache files
+# Python artifacts
 __pycache__/
 *.pyc
-
-# Ignore environment variables
+*.pyo
+*.pyd
+.pytest_cache/
+venv/
 .env
