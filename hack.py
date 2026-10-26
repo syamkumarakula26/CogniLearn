@@ -252,9 +252,15 @@ def fragment_input_sources():
             accept_multiple_files=True,
             key="file_uploader_widget"
         )
+
+        # 1. Track currently uploaded file keys
+        current_uploaded_keys = set()
+
         if uploaded_files:
             for file in uploaded_files:
                 file_key = f"File: {file.name}"
+                current_uploaded_keys.add(file_key)
+
                 if file_key not in st.session_state.sources_dict:
                     try:
                         if file.name.endswith(".pdf"):
@@ -265,6 +271,14 @@ def fragment_input_sources():
                             st.session_state.sources_dict[file_key] = txt_content.strip()
                     except Exception as e:
                         st.error(f"Error reading {file.name}: {e}")
+
+        # 2. Automatically remove any files that were deleted/removed from the uploader
+        stale_file_keys = [
+            k for k in st.session_state.sources_dict.keys() 
+            if k.startswith("File: ") and k not in current_uploaded_keys
+        ]
+        for stale_k in stale_file_keys:
+            del st.session_state.sources_dict[stale_k]
 
     with col_text:
         pasted_notes = st.text_area(
