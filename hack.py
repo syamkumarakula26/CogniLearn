@@ -466,20 +466,26 @@ with tab2:
             task_prompt = (
                 "Generate a diagnostic multiple-choice practice quiz based strictly on the source material.\n\n"
                 "Strict Formatting Rules:\n"
-                "1. Format each question heading using '###' Markdown level 3 header so it is prominent:\n"
+                "1. Format each question heading using a '###' Markdown level 3 header so it is prominent:\n"
                 "   ### Question 1: [Question Text Here]?\n\n"
                 "2. Present the options as normal text, each on its own separate line:\n"
                 "   (A) Option A text\n\n"
                 "   (B) Option B text\n\n"
                 "   (C) Option C text\n\n"
                 "   (D) Option D text\n\n"
-                "3. Place a horizontal line '---' between questions.\n"
-                "4. DO NOT print answers right under each question.\n"
-                "5. When all questions and choices are done, put this exact marker on a brand new isolated line:\n"
+                "3. Place a divider '---' between questions.\n"
+                "4. DO NOT print answers under the questions.\n"
+                "5. When all questions are done, place this exact delimiter on an isolated line:\n"
                 "   [[[ANSWER_KEY_SECTION]]]\n\n"
-                "6. After that marker, write the solutions formatted as:\n"
-                "   **Question 1: (A)** - [Step-by-step rationale]\n\n"
-                "   **Question 2: (B)** - [Step-by-step rationale]"
+                "6. After the delimiter, format EVERY solution strictly across 3 distinct lines with spacing, like this:\n\n"
+                "   #### Question 1\n"
+                "   **Correct Answer:** (B) [Option text here]\n\n"
+                "   **Explanation:** [Detailed step-by-step conceptual rationale here]\n\n"
+                "   ---\n\n"
+                "   #### Question 2\n"
+                "   **Correct Answer:** [Option Letter and text]\n\n"
+                "   **Explanation:** [Detailed rationale]\n\n"
+                "   ---\n"
             )
 
             with st.spinner("Compiling diagnostic quiz questions..."):
@@ -493,7 +499,6 @@ with tab2:
         if "quiz_content" in st.session_state and st.session_state.quiz_content:
             raw_quiz = st.session_state.quiz_content
 
-            # Robust split pattern covering new delimiter or old delimiter variations
             split_pattern = r"(\[\[\[ANSWER_KEY_SECTION\]\]\]|---+\s*ANSWER_KEY\s*---+|ANSWER_KEY:?)"
             parts = re.split(split_pattern, raw_quiz, maxsplit=1, flags=re.IGNORECASE)
 
@@ -501,16 +506,27 @@ with tab2:
                 questions_part = parts[0].strip()
                 answers_part = parts[2].strip()
 
-                # Render enlarged questions
                 st.markdown(questions_part)
                 st.write("")
 
-                # Hidden collapsible container for answers
-                with st.expander("👁️ Reveal Answer Key & Explanations", expanded=False):
-                    st.success("### Official Answer Key & Rationale")
+                # Custom CSS to enlarge the expander header font
+                st.markdown(
+                    """
+                    <style>
+                    div[data-testid="stExpander"] details summary p {
+                        font-size: 1.15rem !important;
+                        font-weight: 700 !important;
+                        color: #1e293b !important;
+                    }
+                    </style>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                with st.expander("👁️ Reveal Answer Key & Detailed Solutions", expanded=False):
+                    st.markdown("## 📋 Official Solutions & Rationales")
                     st.markdown(answers_part)
             else:
-                # If delimiter wasn't triggered cleanly, display text
                 st.markdown(raw_quiz)
 
     render_quiz_tab()
