@@ -466,26 +466,22 @@ with tab2:
             task_prompt = (
                 "Generate a diagnostic multiple-choice practice quiz based strictly on the source material.\n\n"
                 "Strict Formatting Rules:\n"
-                "1. Format each question heading using a '###' Markdown level 3 header so it is prominent:\n"
-                "   ### Question 1: [Question Text Here]?\n\n"
-                "2. Present the options as normal text, each on its own separate line:\n"
-                "   (A) Option A text\n\n"
-                "   (B) Option B text\n\n"
-                "   (C) Option C text\n\n"
-                "   (D) Option D text\n\n"
-                "3. Place a divider '---' between questions.\n"
-                "4. DO NOT print answers under the questions.\n"
-                "5. When all questions are done, place this exact delimiter on an isolated line:\n"
+                "1. Format each question title as a level 3 Markdown header:\n"
+                "   ### Question 1: [Question text here]?\n\n"
+                "2. Format EVERY option as an unordered Markdown bullet item on its OWN line. Do NOT combine them into a single line:\n"
+                "   * **(A)** Option A text\n"
+                "   * **(B)** Option B text\n"
+                "   * **(C)** Option C text\n"
+                "   * **(D)** Option D text\n\n"
+                "3. Place a divider line '---' between questions.\n"
+                "4. DO NOT print answers right under the questions.\n"
+                "5. When all questions are finished, place this exact delimiter on an isolated line:\n"
                 "   [[[ANSWER_KEY_SECTION]]]\n\n"
-                "6. After the delimiter, format EVERY solution strictly across 3 distinct lines with spacing, like this:\n\n"
-                "   #### Question 1\n"
+                "6. After the delimiter, format every answer on 3 separate lines with an extra blank line between them:\n\n"
+                "   #### Question 1\n\n"
                 "   **Correct Answer:** (B) [Option text here]\n\n"
                 "   **Explanation:** [Detailed step-by-step conceptual rationale here]\n\n"
                 "   ---\n\n"
-                "   #### Question 2\n"
-                "   **Correct Answer:** [Option Letter and text]\n\n"
-                "   **Explanation:** [Detailed rationale]\n\n"
-                "   ---\n"
             )
 
             with st.spinner("Compiling diagnostic quiz questions..."):
@@ -509,7 +505,7 @@ with tab2:
                 st.markdown(questions_part)
                 st.write("")
 
-                # Custom CSS to enlarge the expander header font
+                # Custom CSS to enlarge the expander title font
                 st.markdown(
                     """
                     <style>
