@@ -457,9 +457,24 @@ with tab2:
             generate_quiz = st.button("Generate Practice Quiz", use_container_width=True, type="primary")
 
         if generate_quiz:
-            study_text = get_aggregated_text()
+            # Check common session keys or fallback safely
+            study_text = (
+                st.session_state.get("combined_text")
+                or st.session_state.get("aggregated_text")
+                or st.session_state.get("notes_text", "")
+            )
+
+            # If none of those keys were used, fallback to any text stored in session state
             if not study_text.strip():
-                st.warning("Please upload a PDF or enter notes in the sidebar first.")
+                # Gather whatever text is available in session state
+                all_pieces = [
+                    str(v) for k, v in st.session_state.items() 
+                    if isinstance(v, str) and len(v) > 50 and k not in ["quiz_content", "flashcards_raw", "summary_content"]
+                ]
+                study_text = "\n\n".join(all_pieces)
+
+            if not study_text.strip():
+                st.warning("Please upload a PDF or enter notes first.")
                 return
 
             quiz_prompt = (
@@ -477,7 +492,7 @@ with tab2:
             with st.spinner("Compiling diagnostic quiz questions..."):
                 try:
                     response = client.models.generate_content(
-                        model="gemini-2.5-flash-lite",
+                        model="gemini-3.5-flash-lite",
                         contents=quiz_prompt,
                     )
                     st.session_state.quiz_content = response.text
@@ -491,16 +506,15 @@ with tab2:
             if "---ANSWER_KEY---" in raw_quiz:
                 questions_part, answers_part = raw_quiz.split("---ANSWER_KEY---", 1)
                 
-                # Display questions first
+                # Display questions
                 st.markdown(questions_part.strip())
                 st.write("")
                 
-                # Hidden collapsible container for answers
+                # Collapsible answer reveal container
                 with st.expander("👁️ Reveal Answer Key & Detailed Explanations", expanded=False):
                     st.success("### Official Answer Key & Rationale")
                     st.markdown(answers_part.strip())
             else:
-                # Direct fallback if the model omitted the delimiter
                 st.markdown(raw_quiz)
 
     render_quiz_tab()
