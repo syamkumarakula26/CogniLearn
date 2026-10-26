@@ -23,6 +23,14 @@ st.markdown("""
         background-color: #ffffff !important;
         border-right: 1px solid #e2e8f0 !important;
     }
+    /* 1.1 Force slider tick marks and labels to remain permanently visible */
+    div[data-testid="stSlider"] div[data-testid="stSliderTickBar"] span {
+        visibility: visible !important;
+        opacity: 1 !important;
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        color: #475569 !important;
+    }
 
     /* 2. File Uploader & Text Box Styling */
     .stFileUploader section {
